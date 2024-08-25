@@ -1,4 +1,5 @@
 extern crate winapi;
+use crate::file_dialog;
 
 use winapi::um::winuser::{
     CreateDialogParamW, SetWindowPos, HWND_TOP, MAKEINTRESOURCEW, SWP_NOACTIVATE, SWP_NOZORDER,
@@ -9,7 +10,7 @@ use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{COLOR_WINDOW, HBRUSH};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, LoadCursorW, LoadMenuW, RegisterClassW, IDC_ARROW, WM_COMMAND,
-    WNDCLASSW, WS_CHILD, WS_CLIPCHILDREN, WS_OVERLAPPEDWINDOW, WS_VISIBLE,
+    WNDCLASSW, WS_CLIPCHILDREN, WS_OVERLAPPEDWINDOW, WS_VISIBLE,
 };
 
 extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -21,6 +22,13 @@ extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPA
                         windows::Win32::UI::WindowsAndMessaging::PostQuitMessage(0);
                     } // Quit the application
                 }
+                40002 => {
+                    // ID for "Open"
+                    println!("Open menu clicked");
+                    if let Some(path) = file_dialog::open_file_dialog(hwnd) {
+                        file_dialog::display_file_content(hwnd, &path);
+                    }
+                }
                 _ => {}
             }
         }
@@ -28,7 +36,6 @@ extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPA
     }
     unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) }
 }
-
 pub unsafe fn create_main_window(h_instance: HINSTANCE) -> HWND {
     let class_name = "MainAppClass\0".encode_utf16().collect::<Vec<u16>>();
 
@@ -55,8 +62,8 @@ pub unsafe fn create_main_window(h_instance: HINSTANCE) -> HWND {
         WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN, // Make sure the window clips children to avoid overlapping
         100,
         100,
-        1024,
-        768,
+        1000,
+        800,
         None,
         LoadMenuW(h_instance, PCWSTR(MAKEINTRESOURCEW(100) as *const u16)).unwrap(),
         h_instance,
@@ -64,8 +71,11 @@ pub unsafe fn create_main_window(h_instance: HINSTANCE) -> HWND {
     )
     .unwrap();
 
-    // Create the About dialog as a child window within the main window
-    let about_hwnd = CreateDialogParamW(
+    hwnd
+}
+
+pub unsafe fn display_main_dialog(hwnd: HWND, h_instance: HINSTANCE) {
+    let main = CreateDialogParamW(
         h_instance.0 as *mut _, // Convert HINSTANCE to raw pointer
         MAKEINTRESOURCEW(700),
         hwnd.0 as *mut _, // Set hwnd as the parent of the dialog
@@ -73,21 +83,19 @@ pub unsafe fn create_main_window(h_instance: HINSTANCE) -> HWND {
         0,
     );
 
-    if about_hwnd.is_null() {
-        println!("Failed to create About dialog");
+    if main.is_null() {
+        println!("Failed to create main dialog");
     } else {
-        println!("Successfully created About dialog");
+        println!("Successfully created main dialog");
         // Manually set the size and position of the dialog
         SetWindowPos(
-            about_hwnd as *mut _,
+            main as *mut _,
             HWND_TOP,
             0,
             0,
-            1024, // Width matching the main window
-            768,  // Height matching the main window
+            1000, // Width matching the main window
+            800,  // Height matching the main window
             SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW,
         );
     }
-
-    hwnd
 }
