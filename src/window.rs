@@ -10,7 +10,7 @@ use windows::Win32::Foundation::{HINSTANCE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{COLOR_WINDOW, HBRUSH};
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, LoadCursorW, LoadMenuW, RegisterClassW, IDC_ARROW, WM_COMMAND,
-    WNDCLASSW, WS_CLIPCHILDREN, WS_OVERLAPPEDWINDOW, WS_VISIBLE,
+    WNDCLASSW, WS_CLIPCHILDREN, WS_OVERLAPPEDWINDOW, WS_VISIBLE,PostQuitMessage
 };
 
 extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
@@ -29,6 +29,13 @@ extern "system" fn window_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPA
                         file_dialog::display_file_content(hwnd, &path);
                     }
                 }
+                                // Assuming the "Close" button has an ID of 1001
+                                1001 => {
+                                    println!("Close button clicked. Exiting application.");
+                                    unsafe {
+                                        PostQuitMessage(0);
+                                    }
+                                }
                 _ => {}
             }
         }

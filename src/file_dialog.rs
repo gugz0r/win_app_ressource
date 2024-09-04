@@ -32,6 +32,9 @@ fn show_message_box(hwnd: HWND, text: &str, caption: &str) {
     }
 }
 
+
+
+
 pub fn open_file_dialog(hwnd: HWND) -> Option<PathBuf> {
     println!("Open file dialog invoked");
 
@@ -78,30 +81,34 @@ pub fn display_file_content(hwnd: HWND, path: &PathBuf) {
             // Step 2: Retrieve the handle of the dialog with ID 700
             println!("Attempting to retrieve dialog with ID 700.");
             let hwnd_dialog_700 = unsafe {
-                GetDlgItem(hwnd, 700)
-                    .map(|h| {
-                        println!("Handle for DialogBox ID 700: {:?}", h);
-                        h
-                    })
-                    .expect("Failed to get dialog with ID 700")
+                let h = GetDlgItem(hwnd, 700).expect("Failed to get dialog with ID 700");
+                if h.is_invalid() {
+                    println!("Dialog with ID 700 not found under the provided parent HWND.");
+                    panic!("Failed to get dialog with ID 700");
+                } else {
+                    println!("Handle for DialogBox ID 700: {:?}", h);
+                    h
+                }
             };
 
             // Step 3: Retrieve the handle of the tab control with ID 1004
             println!("Attempting to retrieve tab control with ID 1004.");
             let hwnd_tab_1004 = unsafe {
-                GetDlgItem(hwnd_dialog_700, 1004)
-                    .map(|h| {
-                        println!("Handle for TabControl ID 1004: {:?}", h);
-                        h
-                    })
-                    .expect("Failed to get tab control with ID 1004")
+                let h = GetDlgItem(hwnd_dialog_700, 1004).expect("Failed to get tab control with ID 1004");
+                if h.is_invalid() {
+                    println!("Tab control with ID 1004 not found within dialog 700.");
+                    panic!("Failed to get tab control with ID 1004");
+                } else {
+                    println!("Handle for TabControl ID 1004: {:?}", h);
+                    h
+                }
             };
 
             // Step 4: Insert a new tab item
             let tab_text = "File Content";
             let wide_tab_text: Vec<u16> = tab_text.encode_utf16().chain(Some(0)).collect();
 
-            let tc_item = TCITEMW {
+            let mut tc_item = TCITEMW {
                 mask: TCIF_TEXT,
                 pszText: PWSTR(wide_tab_text.as_ptr() as *mut u16),
                 ..Default::default()
@@ -116,7 +123,7 @@ pub fn display_file_content(hwnd: HWND, path: &PathBuf) {
                 );
             }
 
-            // Step 5: Convert the file content to wide string (UTF-16)
+            // Step 5: Convert the file content to a wide string (UTF-16)
             println!("Converting file content to UTF-16.");
             let wide_content: Vec<u16> = file_content.encode_utf16().chain(Some(0)).collect();
             let wide_content_p = PCWSTR(wide_content.as_ptr());
